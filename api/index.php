@@ -1,18 +1,13 @@
 <?php
+use \Psr\Http\Message\ServerRequestInterface as Request;
+use \Psr\Http\Message\ResponseInterface as Response;
 
 require 'vendor/autoload.php';
 
-$app = new \Slim\Slim();
-$app->get('/users', 'getUsers');
-$app->get('/users/:id', 'getUser');
-$app->post('/add_user', 'addUser');
-$app->put('/users/:id', 'updateUser');
-$app->delete('/users/:id', 'deleteUser');
+$app = new \Slim\App();
 
-
-$app->run();
-
-function getUsers() {
+// Get users
+$app->get('/users', function() {
 	$sql = "select * FROM users ORDER BY id";
 	try {
 		$db = getConnection();
@@ -23,9 +18,11 @@ function getUsers() {
 	} catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
-}
+});
 
-function getUser($id) {
+// Get user
+$app->get('/users/{id}', function (Request $request, Response $response) {
+	$id = $request->getAttribute('id');
 	$sql = "select * FROM users WHERE id=".$id." ORDER BY id";
 	try {
 		$db = getConnection();
@@ -36,10 +33,10 @@ function getUser($id) {
 	} catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
-}
+});
 
-function addUser() {
-	$request = Slim::getInstance()->request();
+// Add user
+$app->post('/add_user', function (Request $request, Response $response) {
 	$user = json_decode($request->getBody());
 	$sql = "INSERT INTO users (username, first_name, last_name, address) VALUES (:username, :first_name, :last_name, :address)";
 	try {
@@ -56,10 +53,11 @@ function addUser() {
 	} catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
-}
+});
 
-function updateUser($id) {
-	$request = Slim::getInstance()->request();
+// Update user
+$app->put('/users/{id}', function(Request $request, Response $response) {
+	$id = $request->getAttribute('id');
 	$user = json_decode($request->getBody());
 	$sql = "UPDATE users SET username=:username, first_name=:first_name, last_name=:last_name, address=:address WHERE id=:id";
 	try {
@@ -76,9 +74,11 @@ function updateUser($id) {
 	} catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
-}
+});
 
-function deleteUser($id) {
+// Delete user
+$app->delete('/users/{id}', function(Request $request, Response $response) {
+	$id = $request->getAttribute('id');
 	$sql = "DELETE FROM users WHERE id=".$id;
 	try {
 		$db = getConnection();
@@ -89,7 +89,9 @@ function deleteUser($id) {
 	} catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
-}
+});
+
+$app->run();
 
 function getConnection() {
 	$dbhost="127.0.0.1";
